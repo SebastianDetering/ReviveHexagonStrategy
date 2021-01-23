@@ -18,6 +18,13 @@ let xmltoPng : [String : String] = [ "Desert" : "desert", "Woods" : "forest", "M
 let pngtoXml : [String : String ] = [ "001" : "Trooper", "002" : "Heavy", "003" : "Raider", "004" : "Assault Artillery", "005": "Tank" ]
 
 var stage : game_stages = .menu // this is the universal game stage which will be switched on (for later)
+
+var unit_forms : [units:unit] = [:]
+var terr_forms : [terrains : terr] = [:]
+
+var map_width  : Int = 0
+var map_height : Int = 0
+
 class ViewController: NSViewController {
 
     @IBOutlet var skView: SKView!
@@ -50,10 +57,11 @@ class ViewController: NSViewController {
             }
         }
         
+        // These will get the class forms out of the xml parsing file
         // next I need to grab all the specifications from the xml files.
         // I'm going to try looping through my enum raw values.
-        var unit_forms : [units:unit] = [:]
-        var terr_forms : [terrains : terr] = [:]
+//        var unit_forms : [units:unit] = [:]
+//        var terr_forms : [terrains : terr] = [:] // moved to public scope
         for u in units.allCases {
             // MARK: I can't get the file url to search only through a particular directory. FRUSTRATING
             if let unitFilepath = Bundle.main.url(forResource: u.rawValue, withExtension: "xml") {
@@ -61,10 +69,11 @@ class ViewController: NSViewController {
                 let xml = try String( contentsOf: unitFilepath )
                 let unitParser = UnitParser(withXML: xml)
                 let units = unitParser.parse()
-                unit_forms[u]  = units[0]
+                unit_forms[u]  = units[0]  // only one unit element per file parsed
                 } catch { print("couldn't parse unitFile found \(unitFilepath)")}
                 } else { print("failed fetching unit file with with supposed name: " + u.rawValue)}
         }
+        print( unit_forms[ units.Heavy_Trooper]! )
         for t in terrains.allCases {
             if let unitFileUrl = Bundle.main.url(forResource: t.rawValue, withExtension: "xml") {
                 do {
@@ -72,9 +81,12 @@ class ViewController: NSViewController {
                 let terrainParser = TerrainParser( withXML: xml)
                 let terrains = terrainParser.parse()
                 terr_forms[t]  = terrains[0]
-                } catch { print("couldn't parse unitFile found \(unitFileUrl)")}
-                } else { print("failed fetching unit file with with supposed name: " + t.rawValue)}
-            }
+                } catch { print("couldn't parse unitFile found \(unitFileUrl)") }
+                }
+            else
+                { print("failed fetching unit file with with supposed name: " + t.rawValue) }
+        }
+        print( terr_forms[ terrains.Desert ] )
         // Example xml formatted map for parsing, and instantiating
         var ex_maps : [map]? = []
         let mapName = "tragic triangle - 32" // Example map name
@@ -87,6 +99,8 @@ class ViewController: NSViewController {
             } catch { print("couldn't parse unitFile found \(mapUrl)")}
             } else { print("failed fetching unit file with supposed name: " + mapName)}
         exMap1 = ex_maps![0]
+        map_width = exMap1.width
+        map_height = exMap1.height
         // Everything above is for parsing xmls into usable data.
         if let view = self.skView {
             // Load the SKScene from 'GameScene.sks'

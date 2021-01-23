@@ -14,6 +14,8 @@ class map : CustomStringConvertible {
     var map_terrains : [ [String : String ] ] = [ [:] ]
     var initialCredits : Int = 0
     var perBaseCredits : Int = 0
+    var width : Int = 0
+    var height : Int = 0
     var description : String {
     return "Id : \(mapId), map name : \(name), created by \(author) "
 }
@@ -27,6 +29,9 @@ class MapParser : NSObject {
     var currentMap : map?
     var current_terrains : [ [String:String] ] =  []
     var maps : [map] = []
+    var height : Int = 0
+    var width : Int = 0
+    
     init(withXML xml : String) {
         if let data = xml.data(using: String.Encoding.utf8){
             xmlParser = XMLParser(data : data)
@@ -75,6 +80,16 @@ extension MapParser : XMLParserDelegate {
         if elementName == "name" {
             currentMap?.name = xmlText
         }
+        if elementName == "width" {
+            if let int8Form = Int(xmlText) {
+                currentMap?.width = int8Form
+            }
+        }
+        if elementName == "height" {
+            if let int8Form = Int(xmlText) {
+                currentMap?.height = int8Form
+            } else { print("big problem with getting width and heights into int form from xml")}
+        }
         if elementName == "perBaseCredits" {
             if let intForm = Int(xmlText) {
             currentMap?.perBaseCredits = intForm
@@ -106,8 +121,8 @@ class terr : CustomStringConvertible {
         var typeName =  ""
         var incomeGeneration : Int = 0
         var effects : [ [String:String] ] =  [ ]
-    var buildableUnits : [String] = []
-    var description : String {
+        var buildableUnits : [String] = []
+        var description : String {
         return "\n (NEW TERRAIN) typeId : \(typeId), name : \(typeName), incomeGeneration : \(incomeGeneration), \n effects: <-- The effects this terrain has on unit classes --> \n \(effects) \n \n "
     }
 }
@@ -214,8 +229,9 @@ class unit : CustomStringConvertible {
         var canRepairOnEnemyTerrain : Bool = false
         var defence = 0
         var effects : [ [String:String] ] =  [ ]
+        var actions : [ [String: String] ] = []
     var description : String {
-        return "\n (NEW UNIT) typeId : \(typeId), name : \(typeName), class : \(className), cost : \(cost), initialHealth : \(initialHealth), maxHealth : \(maxHealth), capturableTerrain : \(capturableTerrain), canOccupyEnemyTerrain : \(canOccupyEnemyTerrain), canRepairOnEnemyTerrain : \(canRepairOnEnemyTerrain), defence : \(defence), \n effects: <-- The effects this has on other units --> \n \(effects) \n \n  "
+        return "\n (NEW UNIT) typeId : \(typeId), name : \(typeName), class : \(className), cost : \(cost), initialHealth : \(initialHealth), maxHealth : \(maxHealth), capturableTerrain : \(capturableTerrain), canOccupyEnemyTerrain : \(canOccupyEnemyTerrain), canRepairOnEnemyTerrain : \(canRepairOnEnemyTerrain), defence : \(defence), \n effects: <-- The effects this has on other units --> \n \(effects) <-- The Actions this unit can perform --> \n \(actions) \n \n  "
     }
 }
 
@@ -224,10 +240,13 @@ class UnitParser : NSObject {
     var units : [unit] = []
     var xmlText = ""
     var currentUnit : unit?
+    var actions : [ [String : String] ] = []
     // for setting the final unit effects array
     var effects : [ [String : String ] ] = []
     // I added this to reduce confusion of the <unit> as the entire class tag and < unit...> inside <effects>
     var effectManagement = true
+    // only starts after the action tag is first seen
+    var actionsstarted = false
     init(withXML xml : String) {
         if let data = xml.data(using: String.Encoding.utf8){
             xmlParser = XMLParser(data : data)
@@ -260,6 +279,9 @@ extension UnitParser : XMLParserDelegate {
             effects.append( [ "class" : attributeDict["class"]!, "attack" : attributeDict["attack"]!, "zocRange" : attributeDict["zocRange"]!, "attackMinRange" : attributeDict["attackMinRange"]!, "attackMaxRange" : attributeDict["attackMaxRange"]! ])
             
         } }
+        if elementName == "action" && actionsstarted {
+            actions.append( attributeDict )
+        } else if elementName == "action" { actionsstarted = true }
         
     }
     func parser(_ parser: XMLParser,
@@ -312,7 +334,10 @@ extension UnitParser : XMLParserDelegate {
             currentUnit?.effects = effects
             effectManagement = true
         }
-        // this handles the end of the this unit class
+        if elementName == "action" {
+            currentUnit?.actions = actions
+        }
+        // this handles the end of this unit class
         if elementName == "unit" && effectManagement {
             if let unit = currentUnit {
                 units.append( unit )

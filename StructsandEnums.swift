@@ -20,10 +20,16 @@ class Unit : SKSpriteNode {
     let typeName : units
     let team_color : colors!
     var health : Int8
-    init( typeName : units, team_color : colors!, initialHealth : Int8, init_Texture : SKTexture?, size : CGSize) {
+    var has_moved : Bool = false
+    var has_attacked : Bool = false
+    let movement : UInt8
+    let unitclass : unit_classes
+    init( typeName : units, unitclass : unit_classes, team_color : colors!, initialHealth : Int8, movement : UInt8, init_Texture : SKTexture?, size : CGSize) {
+        self.movement = movement
         self.typeName = typeName
         self.team_color = team_color
         self.health = initialHealth
+        self.unitclass = unitclass
         super.init(texture: init_Texture, color : NSColor(deviceWhite: 1, alpha: 1), size: size)
     }
     required init?(coder aDecoder: NSCoder) {
@@ -46,7 +52,6 @@ struct terrain {
     let ownership : colors?
     let terrain : terrains
 }
-
 enum unit_classes : String , CaseIterable {
     case soft = "soft",
          hard = "hard",

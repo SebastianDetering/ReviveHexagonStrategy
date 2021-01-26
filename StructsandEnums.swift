@@ -22,10 +22,10 @@ class Unit : SKSpriteNode {
     var health : Int8
     var has_moved : Bool = false
     var has_attacked : Bool = false
-    let movement : UInt8
+    var mp : Int8
     let unitclass : unit_classes
-    init( typeName : units, unitclass : unit_classes, team_color : colors!, initialHealth : Int8, movement : UInt8, init_Texture : SKTexture?, size : CGSize) {
-        self.movement = movement
+    init( typeName : units, unitclass : unit_classes, team_color : colors!, initialHealth : Int8, movement : Int8, init_Texture : SKTexture?, size : CGSize) {
+        self.mp = movement
         self.typeName = typeName
         self.team_color = team_color
         self.health = initialHealth
@@ -34,6 +34,9 @@ class Unit : SKSpriteNode {
     }
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+    func actioneD( _ cost : Int8) {
+        mp -= cost
     }
 }
 
@@ -45,6 +48,7 @@ enum colors : String, CaseIterable {
          white = "white",
          yellow = "yellow"
 }
+
 enum game_stages {
     case menu, edit, play, setup, pause, ended
 }

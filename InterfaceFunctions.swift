@@ -70,7 +70,7 @@ func adjacentTiles( pos : SIMD2<Int>, omit : [SIMD2<Int>] ) -> [SIMD2<Int>] {
 
 
 extension GameScene {
-    // for use in the computeRange() method. Should be able to be recursively used.
+    // for use in the computeRange() method. Recursive.
     func branchTiles( positions : [SIMD2<Int>:Int8], omit : [SIMD2<Int>], u_class : unit_classes ) -> [SIMD2<Int>: Int8]  {
         var branched_options = positions
         var new_omit = omit
@@ -110,14 +110,11 @@ extension GameScene {
         var moves_Out : [ SIMD2<Int> : Int8 ] = [unitPos : 0]
         if let myunit = vec_dict[unitPos]?[2] as? Unit {
             let u_class = myunit.unitclass
-            if let move_points = Int8( unit_forms[ myunit.typeName ]!.actions[ 1 ]["movementPoints"]! ) {
-                // when two tiles are stepping stones to a tile, select the one with least points, flag the tile as using X m. points...
-                moves_Out = branchTiles(positions: [ unitPos: move_points], omit: [unitPos], u_class: u_class)
-                return moves_Out
-
-            } else { fatalError( "xmlParser formatting for unit movement specs is prob. causing this problem" )
+            let move_points = myunit.mp
+            // when two tiles are stepping stones to a tile, select the one with least points, flag the tile as using X m. points...
+            moves_Out = branchTiles(positions: [ unitPos: move_points], omit: [unitPos], u_class: u_class)
+            return moves_Out
             // use all the movment points up, finding most efficient path to tile.
-            }
         } else { print("WARNING : Called computeRange() on tile not containing unit."); return moves_Out; }
     }
     
@@ -182,13 +179,21 @@ extension GameScene {
             } }
             // if the break statement hit, we continue here and go through a loop that will follow selection rules concerning units
         if unit_pos != nil {
+        
         tile_selected = unit_pos
+            if vec_dict[unit_pos!]!.count > 1 {
+            if let  u_ref = vec_dict[unit_pos!]?[2] as? Unit {
+                if u_ref.team_color == colors.allCases[ turn ] {
+                    if u_ref.has_moved { } else{
+                    if let move_points = Int8( unit_forms[ u_ref.typeName ]!.actions[ 1 ]["movementPoints"]! ) {
+                                u_ref.mp = move_points
+                                print( "set mp to \(u_ref.mp)")
+                                } else { fatalError( "xmlParser formatting for unit movement specs is prob. causing this problem" )}
+                    }
         var sround_tiles : [SIMD2<Int>] = []
         for t in computeRange( unitPos: unit_pos! ).keys {
-            print(t)
             sround_tiles.append(t)
         }
-        print(sround_tiles)
             if sround_tiles.count > 1 {
         for _ in vec_dict {
              for index in 0...sround_tiles.count - 1 {
@@ -205,9 +210,16 @@ extension GameScene {
                     grayOut(sprite: i, strength: strength, color: color)  }
                 } else { for i in elem.value {
                     grayReset( sprite : i)
-                } }} } }
+                }
+                }
+            }
+            }
+                } else {print("not this unit's owner's turn")}
+            }
+        } else { fatalError("unit_pos at \(unit_pos!) is suspected wrongly") }
+        }
    }
-    
+
     // Dotted Background
     func create_dbshader() -> SKShader {
         let uniforms: [SKUniform] = [
